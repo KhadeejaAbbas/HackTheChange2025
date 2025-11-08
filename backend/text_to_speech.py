@@ -1,7 +1,7 @@
 from openai import OpenAI
 
 client = OpenAI()
-input_audio_file = "/path/to/file/audio.mp3"
+input_audio_file = "/Users/aaronamoso/Desktop/Personal Projects/HackTheChange2025/samplevoice.mp3"
 audio_file= open(input_audio_file, "rb")
 
 transcription = client.audio.transcriptions.create(
