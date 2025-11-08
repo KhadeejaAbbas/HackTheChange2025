@@ -7,7 +7,10 @@ audio_file= open(input_audio_file, "rb")
 transcription = client.audio.transcriptions.create(
     model="gpt-4o-transcribe", 
     file=audio_file,
-    response_format="text"
+    response_format="text",
+    stream=True # allows it to be a stream
+
 )
 
-print(transcription.text)
+for event in stream:
+  print(event)
