@@ -5,9 +5,12 @@ Lists the available Amazon Bedrock models.
 import logging
 import json
 import boto3
-
-
+import os
+from dotenv import load_dotenv
 from botocore.exceptions import ClientError
+
+# Load environment variables from backend/.env file
+load_dotenv('backend/.env')
 
 
 logging.basicConfig(level=logging.INFO)
