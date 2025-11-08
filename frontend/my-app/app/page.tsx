@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import LoginForm from '../components/LoginForm';
 import SignupForm from '../components/SignupForm';
 
+const SignupFormAny = SignupForm as any;
+
 export default function Home() {
   const [showLogin, setShowLogin] = useState(true);
 
@@ -17,7 +19,7 @@ export default function Home() {
         {showLogin ? (
           <LoginForm onSwitch={() => setShowLogin(false)} />
         ) : (
-          <SignupForm onSwitch={() => setShowLogin(true)} />
+          <SignupFormAny onSwitch={() => setShowLogin(true)} />
         )}
       </div>
     </div>
