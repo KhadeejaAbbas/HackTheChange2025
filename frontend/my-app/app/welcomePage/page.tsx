@@ -1,1 +1,0 @@
-// welcomePage/page.tsx
