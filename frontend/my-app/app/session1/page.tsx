@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 
-// Mock session data
+// Mock session data TODO: REMOVE
 const sessionData = {
   doctor: {
     sessionNumber: 1,
@@ -29,6 +29,11 @@ export default function Session1Page() {
       : "doctorName" in session
       ? session.doctorName
       : "";
+
+  const handleStartSession = () => {
+    // Navigate to active session interface
+    window.location.href = `/session/${session.sessionNumber}/active`;
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -67,9 +72,20 @@ export default function Session1Page() {
 
       {/* Session details */}
       <div className="bg-white rounded-lg shadow-md p-8">
-        <h1 className="text-3xl font-bold mb-4">
-          Session #{session.sessionNumber}
-        </h1>
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-3xl font-bold">
+            Session #{session.sessionNumber}
+          </h1>
+          {/* Start Session Button - Only for Doctors */}
+          {userType === "doctor" && (
+            <button
+              onClick={handleStartSession}
+              className="px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition font-semibold"
+            >
+              Start Session
+            </button>
+          )}
+        </div>
         <p className="text-xl font-semibold text-gray-700">
           {userType === "doctor"
             ? `Patient: ${displayName}`

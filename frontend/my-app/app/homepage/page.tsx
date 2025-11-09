@@ -4,7 +4,7 @@ import { useState } from "react";
 import SessionsList from "@/components/SessionsList";
 import { Session } from "@/components/SessionCard";
 
-// Mock data for doctor sessions
+// Mock data for doctor sessions TODO: REMOVE
 const doctorSessions: Session[] = [
   {
     id: 1,
@@ -13,7 +13,7 @@ const doctorSessions: Session[] = [
   },
 ];
 
-// Mock data for patient sessions
+// Mock data for patient sessions TODO: REMOVE
 const patientSessions: Session[] = [
   {
     id: 1,
