@@ -3,31 +3,56 @@
 import { useState } from "react";
 
 export default function ActiveSessionPage() {
-  const [isRecording, setIsRecording] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState("en");
+  const [isDoctorRecording, setIsDoctorRecording] = useState(false);
+  const [isPatientRecording, setIsPatientRecording] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState("es");
   const [transcript] = useState("");
 
   // Mock session info TODO: REMOVE
   const sessionNumber = 1;
   const patientName = "John Smith";
+  const doctorName = "Dr. Sarah Johnson";
 
-  const handleToggleRecording = () => {
-    if (!isRecording) {
-      // Start recording
-      setIsRecording(true);
-      console.log("Starting recording...");
-      // TODO: Connect to speech-to-text API
+  const handleToggleDoctorRecording = () => {
+    if (!isDoctorRecording) {
+      // Stop patient recording if active
+      if (isPatientRecording) {
+        setIsPatientRecording(false);
+      }
+      // Start doctor recording
+      setIsDoctorRecording(true);
+      console.log("Doctor started speaking in English...");
+      // TODO: Connect to speech-to-text API with speaker="doctor", language="en"
     } else {
-      // Stop recording
-      setIsRecording(false);
-      console.log("Stopping recording...");
+      // Stop doctor recording
+      setIsDoctorRecording(false);
+      console.log("Doctor stopped speaking...");
+      // TODO: Stop speech-to-text
+    }
+  };
+
+  const handleTogglePatientRecording = () => {
+    if (!isPatientRecording) {
+      // Stop doctor recording if active
+      if (isDoctorRecording) {
+        setIsDoctorRecording(false);
+      }
+      // Start patient recording
+      setIsPatientRecording(true);
+      console.log(`Patient started speaking in ${selectedLanguage}...`);
+      // TODO: Connect to speech-to-text API with speaker="patient", language=selectedLanguage
+    } else {
+      // Stop patient recording
+      setIsPatientRecording(false);
+      console.log("Patient stopped speaking...");
       // TODO: Stop speech-to-text
     }
   };
 
   const handleEndSession = () => {
-    if (isRecording) {
-      setIsRecording(false);
+    if (isDoctorRecording || isPatientRecording) {
+      setIsDoctorRecording(false);
+      setIsPatientRecording(false);
     }
     // TODO: Save session data and navigate back
     const confirmed = confirm("Are you sure you want to end this session?");
@@ -35,6 +60,8 @@ export default function ActiveSessionPage() {
       window.location.href = "/homepage";
     }
   };
+
+  const isRecording = isDoctorRecording || isPatientRecording;
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -65,14 +92,15 @@ export default function ActiveSessionPage() {
           <div className="lg:col-span-1 space-y-6">
             {/* Language Selector */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-semibold mb-4">Language</h2>
+              <h2 className="text-lg font-semibold mb-4">
+                Patient&apos;s Language
+              </h2>
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
                 className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={isRecording}
               >
-                <option value="en">English</option>
                 <option value="es">Spanish</option>
                 <option value="fr">French</option>
                 <option value="de">German</option>
@@ -82,32 +110,67 @@ export default function ActiveSessionPage() {
               </select>
             </div>
 
-            {/* Recording Button */}
+            {/* Recording Controls */}
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-lg font-semibold mb-4">Recording</h2>
-              <button
-                onClick={handleToggleRecording}
-                className={`w-full py-4 rounded-lg font-semibold text-white transition ${
-                  isRecording
-                    ? "bg-red-600 hover:bg-red-700"
-                    : "bg-blue-600 hover:bg-blue-700"
-                }`}
-              >
-                {isRecording ? (
-                  <div className="flex items-center justify-center gap-2">
-                    <span className="animate-pulse">●</span>
-                    Stop Recording
-                  </div>
-                ) : (
-                  "Start Recording"
-                )}
-              </button>
+              <h2 className="text-lg font-semibold mb-4">Who is Speaking?</h2>
+
+              {/* Doctor Recording Button */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Doctor (English)
+                </label>
+                <button
+                  onClick={handleToggleDoctorRecording}
+                  className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+                    isDoctorRecording
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-blue-600 hover:bg-blue-700"
+                  }`}
+                >
+                  {isDoctorRecording ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="animate-pulse">●</span>
+                      Doctor Speaking...
+                    </div>
+                  ) : (
+                    "Doctor Start"
+                  )}
+                </button>
+              </div>
+
+              {/* Patient Recording Button */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Patient ({selectedLanguage.toUpperCase()})
+                </label>
+                <button
+                  onClick={handleTogglePatientRecording}
+                  className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+                    isPatientRecording
+                      ? "bg-red-600 hover:bg-red-700"
+                      : "bg-green-600 hover:bg-green-700"
+                  }`}
+                >
+                  {isPatientRecording ? (
+                    <div className="flex items-center justify-center gap-2">
+                      <span className="animate-pulse">●</span>
+                      Patient Speaking...
+                    </div>
+                  ) : (
+                    "Patient Start"
+                  )}
+                </button>
+              </div>
+
+              {/* Active Speaker Indicator */}
               {isRecording && (
-                <div className="mt-4 text-center">
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-center">
                   <div className="inline-flex items-center gap-2 text-red-600">
-                    <span className="animate-pulse text-2xl">●</span>
+                    <span className="animate-pulse text-xl">●</span>
                     <span className="font-semibold">
-                      Recording in progress...
+                      {isDoctorRecording
+                        ? `${doctorName} speaking`
+                        : `${patientName} speaking`}
                     </span>
                   </div>
                 </div>
@@ -119,6 +182,18 @@ export default function ActiveSessionPage() {
               <h2 className="text-lg font-semibold mb-4">Session Info</h2>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
+                  <span className="text-gray-600">Doctor:</span>
+                  <span className="font-semibold text-gray-900">
+                    {doctorName}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Patient:</span>
+                  <span className="font-semibold text-gray-900">
+                    {patientName}
+                  </span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-gray-600">Status:</span>
                   <span
                     className={`font-semibold ${
@@ -129,7 +204,11 @@ export default function ActiveSessionPage() {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Language:</span>
+                  <span className="text-gray-600">Doctor Language:</span>
+                  <span className="font-semibold">EN</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Patient Language:</span>
                   <span className="font-semibold">
                     {selectedLanguage.toUpperCase()}
                   </span>
