@@ -3,7 +3,8 @@ const sessionService = require("../services/sessionService");
 //  Create a new session (doctors only)
 const createSession = async (req, res, next) => {
   try {
-    const { patientName, patientLanguage, doctorLanguage } = req.body;
+    const { patientId, patientName, patientLanguage, doctorLanguage } =
+      req.body;
 
     const doctorId = req.user.sub;
     const userType = req.user["cognito:groups"]?.[0]?.toLowerCase();
@@ -14,15 +15,22 @@ const createSession = async (req, res, next) => {
         .json({ error: "Only doctors can create sessions" });
     }
 
-    if (!patientName || !patientLanguage || !doctorLanguage) {
+    if (!patientLanguage || !doctorLanguage) {
       return res.status(400).json({
-        error:
-          "Missing required fields: patientName, patientLanguage, doctorLanguage",
+        error: "Missing required fields: patientLanguage, doctorLanguage",
+      });
+    }
+
+    // Either patientId or patientName is required
+    if (!patientId && !patientName) {
+      return res.status(400).json({
+        error: "Either patientId or patientName is required",
       });
     }
 
     const session = await sessionService.createSession({
       doctorId,
+      patientId,
       patientName,
       patientLanguage,
       doctorLanguage,

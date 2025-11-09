@@ -1,6 +1,10 @@
-const { PutCommand } = require('@aws-sdk/lib-dynamodb');
-const getDynamoDocumentClient = require('../config/dynamoClient');
-const env = require('../config/env');
+const {
+  PutCommand,
+  ScanCommand,
+  GetCommand,
+} = require("@aws-sdk/lib-dynamodb");
+const getDynamoDocumentClient = require("../config/dynamoClient");
+const env = require("../config/env");
 
 async function createPatient({
   id,
@@ -16,7 +20,7 @@ async function createPatient({
   const timestamp = new Date().toISOString();
   const item = {
     userId: id,
-    entityType: 'patient',
+    entityType: "patient",
     patientRecordId: id,
     patientId: patientId || id,
     name,
@@ -30,14 +34,49 @@ async function createPatient({
     updatedAt: timestamp,
   };
 
-  await docClient.send(new PutCommand({
-    TableName: env.dynamo.usersTable,
-    Item: item,
-  }));
+  await docClient.send(
+    new PutCommand({
+      TableName: env.dynamo.usersTable,
+      Item: item,
+    })
+  );
 
   return item;
 }
 
+// Get all patients
+async function getAllPatients() {
+  const docClient = getDynamoDocumentClient();
+
+  const result = await docClient.send(
+    new ScanCommand({
+      TableName: env.dynamo.usersTable,
+      FilterExpression: "entityType = :entityType",
+      ExpressionAttributeValues: {
+        ":entityType": "patient",
+      },
+    })
+  );
+
+  return result.Items || [];
+}
+
+// Get a patient by their userId
+async function getPatientById(patientId) {
+  const docClient = getDynamoDocumentClient();
+
+  const result = await docClient.send(
+    new GetCommand({
+      TableName: env.dynamo.usersTable,
+      Key: { userId: patientId },
+    })
+  );
+
+  return result.Item || null;
+}
+
 module.exports = {
   createPatient,
+  getAllPatients,
+  getPatientById,
 };

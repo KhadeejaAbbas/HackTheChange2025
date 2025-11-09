@@ -3,7 +3,8 @@ const cors = require('cors');
 const env = require('./config/env');
 const authRoutes = require('./routes/authRoutes');
 const sessionRoutes = require("./routes/sessionRoutes");
-const errorHandler = require('./middleware/errorHandler');
+const patientRoutes = require("./routes/patientRoutes");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 const PORT = env.port;
@@ -11,12 +12,13 @@ const PORT = env.port;
 app.use(cors());
 app.use(express.json());
 
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok', uptime: process.uptime() });
+app.get("/health", (req, res) => {
+  res.json({ status: "ok", uptime: process.uptime() });
 });
 
-app.use('/auth', authRoutes);
-app.use('/sessions', sessionRoutes);
+app.use("/auth", authRoutes);
+app.use("/sessions", sessionRoutes);
+app.use("/patients", patientRoutes);
 
 app.use(errorHandler);
 

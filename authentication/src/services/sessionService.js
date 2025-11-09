@@ -1,16 +1,23 @@
 const sessionRepository = require("../repositories/sessionRepository");
+const patientRepository = require("../repositories/patientRepository");
 const HttpError = require("../utils/httpError");
 
 // Create a new session
 const createSession = async ({
   doctorId,
+  patientId,
   patientName,
   patientLanguage,
   doctorLanguage,
 }) => {
   // Validate inputs
-  if (!doctorId || !patientName || !patientLanguage || !doctorLanguage) {
+  if (!doctorId || !patientLanguage || !doctorLanguage) {
     throw new HttpError(400, "Missing required fields");
+  }
+
+  // Either patientId or patientName must be provided
+  if (!patientId && !patientName) {
+    throw new HttpError(400, "Either patientId or patientName is required");
   }
 
   // Validate language codes (basic validation)
@@ -22,9 +29,22 @@ const createSession = async ({
     throw new HttpError(400, "Invalid language code");
   }
 
+  let finalPatientName = patientName;
+  let finalPatientId = patientId;
+
+  // If patientId is provided, fetch patient details from the database
+  if (patientId) {
+    const patient = await patientRepository.getPatientById(patientId);
+    if (!patient) {
+      throw new HttpError(404, "Patient not found");
+    }
+    finalPatientName = patient.name;
+  }
+
   const sessionData = {
     doctorId,
-    patientName: patientName.trim(),
+    patientId: finalPatientId || null,
+    patientName: finalPatientName.trim(),
     patientLanguage,
     doctorLanguage,
     status: "scheduled",

@@ -8,6 +8,14 @@ import { getUserInfo, isAuthenticated, logout } from "@/utils/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+interface Patient {
+  patientId: string;
+  name: string;
+  email: string;
+  age?: number;
+  condition?: string;
+}
+
 interface APISession {
   sessionId: string;
   doctorId: string;
@@ -31,11 +39,14 @@ export default function HomePage() {
   const [userType, setUserType] = useState<"doctor" | "patient" | null>(null);
   const [userName, setUserName] = useState<string>("");
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState("");
   const [patientName, setPatientName] = useState("");
   const [patientLanguage, setPatientLanguage] = useState("es");
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [useExistingPatient, setUseExistingPatient] = useState(true);
 
   // Fetch sessions from the API
   const fetchSessions = useCallback(async () => {
@@ -73,6 +84,30 @@ export default function HomePage() {
     }
   }, []);
 
+  // Fetch patients for doctors
+  const fetchPatients = useCallback(async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+
+      const response = await fetch(`${API_BASE_URL}/patients`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setPatients(data.patients || []);
+      } else {
+        console.error("Failed to fetch patients");
+        setPatients([]);
+      }
+    } catch (error) {
+      console.error("Error fetching patients:", error);
+      setPatients([]);
+    }
+  }, []);
+
   // Get user info from JWT token on mount
   useEffect(() => {
     const initializeUser = async () => {
@@ -97,16 +132,29 @@ export default function HomePage() {
 
       // Fetch real sessions from API
       await fetchSessions();
+
+      // Fetch patients if user is a doctor
+      if (type === "doctor") {
+        await fetchPatients();
+      }
+
       setIsLoading(false);
     };
 
     initializeUser();
-  }, [router, fetchSessions]);
+  }, [router, fetchSessions, fetchPatients]);
 
   const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!patientName.trim()) {
+    // Validate inputs
+    if (useExistingPatient && !selectedPatientId) {
+      alert("Please select a patient");
+      return;
+    }
+
+    if (!useExistingPatient && !patientName.trim()) {
+      alert("Please enter a patient name");
       return;
     }
 
@@ -115,17 +163,25 @@ export default function HomePage() {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
+      const requestBody = useExistingPatient
+        ? {
+            patientId: selectedPatientId,
+            patientLanguage,
+            doctorLanguage: "en",
+          }
+        : {
+            patientName: patientName.trim(),
+            patientLanguage,
+            doctorLanguage: "en",
+          };
+
       const response = await fetch(`${API_BASE_URL}/sessions`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
         },
-        body: JSON.stringify({
-          patientName: patientName.trim(),
-          patientLanguage,
-          doctorLanguage: "en",
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (response.ok) {
@@ -136,8 +192,10 @@ export default function HomePage() {
         await fetchSessions();
 
         // Reset and close modal
+        setSelectedPatientId("");
         setPatientName("");
         setPatientLanguage("es");
+        setUseExistingPatient(true);
         setIsModalOpen(false);
       } else {
         const errorData = await response.json();
@@ -217,8 +275,10 @@ export default function HomePage() {
               <button
                 onClick={() => {
                   setIsModalOpen(false);
+                  setSelectedPatientId("");
                   setPatientName("");
                   setPatientLanguage("es");
+                  setUseExistingPatient(true);
                 }}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >
@@ -227,24 +287,80 @@ export default function HomePage() {
             </div>
 
             <form onSubmit={handleCreateSession}>
+              {/* Toggle between existing patient and new patient */}
               <div className="mb-4">
-                <label
-                  htmlFor="patientName"
-                  className="block text-sm font-medium text-gray-700 mb-2"
-                >
-                  Patient Name
-                </label>
-                <input
-                  type="text"
-                  id="patientName"
-                  value={patientName}
-                  onChange={(e) => setPatientName(e.target.value)}
-                  placeholder="Enter patient name"
-                  required
-                  disabled={isCreating}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                />
+                <div className="flex gap-4 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setUseExistingPatient(true)}
+                    className={`flex-1 py-2 px-4 rounded transition ${
+                      useExistingPatient
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    Select Existing Patient
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseExistingPatient(false)}
+                    className={`flex-1 py-2 px-4 rounded transition ${
+                      !useExistingPatient
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    }`}
+                  >
+                    New Patient
+                  </button>
+                </div>
               </div>
+
+              {/* Patient Selection */}
+              {useExistingPatient ? (
+                <div className="mb-4">
+                  <label
+                    htmlFor="patientSelect"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Select Patient
+                  </label>
+                  <select
+                    id="patientSelect"
+                    value={selectedPatientId}
+                    onChange={(e) => setSelectedPatientId(e.target.value)}
+                    required
+                    disabled={isCreating}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  >
+                    <option value="">-- Select a patient --</option>
+                    {patients.map((patient) => (
+                      <option key={patient.patientId} value={patient.patientId}>
+                        {patient.name} ({patient.email})
+                        {patient.condition && ` - ${patient.condition}`}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : (
+                <div className="mb-4">
+                  <label
+                    htmlFor="patientName"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
+                    Patient Name
+                  </label>
+                  <input
+                    type="text"
+                    id="patientName"
+                    value={patientName}
+                    onChange={(e) => setPatientName(e.target.value)}
+                    placeholder="Enter patient name"
+                    required
+                    disabled={isCreating}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+                  />
+                </div>
+              )}
 
               <div className="mb-4">
                 <label
@@ -274,8 +390,10 @@ export default function HomePage() {
                   type="button"
                   onClick={() => {
                     setIsModalOpen(false);
+                    setSelectedPatientId("");
                     setPatientName("");
                     setPatientLanguage("es");
+                    setUseExistingPatient(true);
                   }}
                   disabled={isCreating}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
