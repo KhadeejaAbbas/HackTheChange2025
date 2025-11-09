@@ -33,7 +33,7 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -47,8 +47,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     }
 
     try {
-      // Directly call the authentication server endpoints
-      // Authentication server exposes: POST /auth/register/doctor and POST /auth/register/patient
       const endpoint =
         formData.role === "doctor"
           ? `${API_BASE_URL}/auth/register/doctor`
@@ -68,13 +66,18 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
         }),
       });
 
-      const data = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (err) {
+        console.error('Failed to parse response:', err);
+        throw new Error(`Server error (${response.status}): Failed to parse response`);
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to create account");
       }
 
-      // Redirect to homepage after successful signup
       window.location.href = "/homepage";
     } catch (err: unknown) {
       setError(
@@ -83,6 +86,10 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
           : "Failed to create an account. Please try again."
       );
       console.error("Signup error:", err);
+      
+      if (err instanceof Error && err.message.includes('Failed to fetch')) {
+        console.error('Connection error - Make sure the authentication server is running on port 3001');
+      }
     } finally {
       setLoading(false);
     }

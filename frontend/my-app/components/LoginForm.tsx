@@ -32,8 +32,6 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
         }
         throw new Error(data.error || data.message || 'Login failed');
       }
-
-      // Store the tokens in localStorage or a secure cookie
       if (data.tokens) {
         localStorage.setItem('accessToken', data.tokens.AccessToken);
         localStorage.setItem('idToken', data.tokens.IdToken);
