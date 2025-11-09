@@ -1,12 +1,28 @@
 "use client";
 
 import { useState } from "react";
+import ChatBox from "../../../../components/ChatBox";
+
+const mockChatHistory = [
+  {
+    speaker: "doctor" as const,
+    originalText: "How are you feeling today?",
+    translatedText: "¿Cómo te sientes hoy?",
+    timestamp: "2025-11-08T17:32:00Z",
+  },
+  {
+    speaker: "patient" as const,
+    originalText: "Estoy bien, gracias.",
+    translatedText: "I'm fine, thank you.",
+    timestamp: "2025-11-08T17:33:10Z",
+  },
+];
 
 export default function ActiveSessionPage() {
   const [isDoctorRecording, setIsDoctorRecording] = useState(false);
   const [isPatientRecording, setIsPatientRecording] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState("es");
-  const [transcript] = useState("");
+  const [chatHistory, setChatHistory] = useState(mockChatHistory);
 
   // Mock session info TODO: REMOVE
   const sessionNumber = 1;
@@ -28,6 +44,15 @@ export default function ActiveSessionPage() {
       setIsDoctorRecording(false);
       console.log("Doctor stopped speaking...");
       // TODO: Stop speech-to-text
+
+      // Demo: append a mock doctor message when recording stops
+      const newMsg = {
+        speaker: "doctor" as const,
+        originalText: "How is your pain level today?",
+        translatedText: "¿Cuál es tu nivel de dolor hoy?",
+        timestamp: new Date().toISOString(),
+      };
+      setChatHistory((prev) => [...prev, newMsg]);
     }
   };
 
@@ -46,6 +71,15 @@ export default function ActiveSessionPage() {
       setIsPatientRecording(false);
       console.log("Patient stopped speaking...");
       // TODO: Stop speech-to-text
+
+      // Demo: append a mock patient message when recording stops
+      const newMsg = {
+        speaker: "patient" as const,
+        originalText: "Me siento mejor hoy.",
+        translatedText: "I feel better today.",
+        timestamp: new Date().toISOString(),
+      };
+      setChatHistory((prev) => [...prev, newMsg]);
     }
   };
 
@@ -217,22 +251,12 @@ export default function ActiveSessionPage() {
             </div>
           </div>
 
-          {/* Live Transcript Area */}
+          {/* Chat History */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-md p-6 h-full">
-              <h2 className="text-lg font-semibold mb-4">Live Transcript</h2>
-              <div className="bg-gray-50 rounded p-4 min-h-[500px] max-h-[600px] overflow-y-auto">
-                {transcript ? (
-                  <p className="text-gray-900 whitespace-pre-wrap">
-                    {transcript}
-                  </p>
-                ) : (
-                  <p className="text-gray-400 italic">
-                    {isRecording
-                      ? "Listening... Transcript will appear here."
-                      : "Start recording to see the transcript here."}
-                  </p>
-                )}
+            <div className="bg-white rounded-lg shadow-md p-6 h-full flex flex-col">
+              <h2 className="text-lg font-semibold mb-4">Session Chat</h2>
+              <div className="flex-1 min-h-[500px] max-h-[600px]">
+                <ChatBox chatHistory={chatHistory} />
               </div>
             </div>
           </div>
