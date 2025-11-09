@@ -3,8 +3,7 @@ const {
   SignUpCommand,
   AdminAddUserToGroupCommand,
   InitiateAuthCommand,
-  ConfirmSignUpCommand,
-  ResendConfirmationCodeCommand,
+  AdminConfirmSignUpCommand,
 } = require('@aws-sdk/client-cognito-identity-provider');
 const HttpError = require('../utils/httpError');
 const env = require('../config/env');
@@ -102,6 +101,12 @@ async function registerUser({
 
     const response = await client.send(signUpCommand);
 
+    // Auto-confirm the user
+    await client.send(new AdminConfirmSignUpCommand({
+      UserPoolId: env.cognito.userPoolId,
+      Username: email,
+    }));
+
     if (groupName) {
       const addToGroupCommand = new AdminAddUserToGroupCommand({
         GroupName: groupName,
@@ -113,7 +118,7 @@ async function registerUser({
 
     return {
       userSub: response.UserSub,
-      status: response.UserConfirmed ? 'CONFIRMED' : 'UNCONFIRMED',
+      status: 'CONFIRMED',
     };
   } catch (error) {
     throw mapCognitoError(error);
@@ -221,65 +226,10 @@ async function login({ email, password }) {
   }
 }
 
-async function confirmSignUp({ email, code }) {
-  if (!email || !code) {
-    throw new HttpError(400, 'email and code are required');
-  }
 
-  env.assertCognitoConfig();
-  const client = getCognitoClient();
-
-  try {
-    const secretHash = buildSecretHash(email);
-    const params = {
-      ClientId: env.cognito.clientId,
-      Username: email,
-      ConfirmationCode: code,
-    };
-
-    if (secretHash) {
-      params.SecretHash = secretHash;
-    }
-
-    await client.send(new ConfirmSignUpCommand(params));
-
-    return { confirmed: true };
-  } catch (error) {
-    throw mapCognitoError(error);
-  }
-}
-
-async function resendConfirmationCode({ email }) {
-  if (!email) {
-    throw new HttpError(400, 'email is required');
-  }
-
-  env.assertCognitoConfig();
-  const client = getCognitoClient();
-
-  try {
-    const secretHash = buildSecretHash(email);
-    const params = {
-      ClientId: env.cognito.clientId,
-      Username: email,
-    };
-
-    if (secretHash) {
-      params.SecretHash = secretHash;
-    }
-
-    await client.send(new ResendConfirmationCodeCommand(params));
-
-    return { status: 'CODE_RESENT' };
-  } catch (error) {
-    throw mapCognitoError(error);
-  }
-}
 
 module.exports = {
   registerDoctor,
   registerPatient,
   login,
-  confirmSignUp,
-  resendConfirmationCode,
 };

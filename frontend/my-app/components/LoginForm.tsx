@@ -12,11 +12,35 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     e.preventDefault();
     setError('');
 
-    // Mock database rn 
-    if (email === 'test@example.com' && password === 'password123') {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (response.status === 503) {
+          setError('Authentication service is unavailable. Please try again later.');
+          return;
+        }
+        throw new Error(data.message || 'Login failed');
+      }
+
+      // Store the tokens in localStorage or a secure cookie
+      if (data.tokens) {
+        localStorage.setItem('accessToken', data.tokens.AccessToken);
+        localStorage.setItem('refreshToken', data.tokens.RefreshToken);
+      }
+
       router.push("/homepage");
-    } else {
-      setError('Invalid email or password.');
+    } catch (err) {
+      console.error('Login error:', err);
+      setError(err instanceof Error ? err.message : 'Invalid email or password.');
     }
   };
 

@@ -44,14 +44,36 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     }
 
     try {
-      // TODO: Connect to authentication backend at /auth/register/doctor or /auth/register/patient
-      // For now, simulate successful signup
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Directly call the authentication server endpoints
+      // Authentication server exposes: POST /auth/register/doctor and POST /auth/register/patient
+      const endpoint = formData.role === 'doctor'
+        ? 'http://localhost:3001/auth/register/doctor'
+        : 'http://localhost:3001/auth/register/patient';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password,
+          name: formData.name,
+          birthdate: formData.dob,
+          gender: formData.gender,
+          age: formData.age,
+        }),
+      });
+
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to create account');
+      }
       
       // Redirect to homepage after successful signup
       window.location.href = '/homepage';
     } catch (err: unknown) {
-      setError('Failed to create an account. Please try again.');
+      setError(err instanceof Error ? err.message : 'Failed to create an account. Please try again.');
       console.error('Signup error:', err);
     } finally {
       setLoading(false);
