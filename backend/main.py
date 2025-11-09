@@ -94,17 +94,13 @@ def process_audio_file(audio_file_path, save_to_s3=True, translate_languages=Non
             translation_urls[lang_code] = trans_url
             print(f"Saved {lang_code} translation to S3: {trans_url}")
         
-        # Save full results as JSON
-        json_key = f"transcripts/{base_name}_{timestamp}.json"
-        json_url = storage.upload_json(results, json_key)
-        
+        # Save only text files (transcript + translations). Do not upload JSON.
         results["storage"] = {
             "text_url": txt_url,
-            "json_url": json_url,
-            "translation_urls": translation_urls
+            "translation_urls": translation_urls,
         }
-        
-        print(f"Saved to S3: {txt_url}")
+
+        print(f"Saved transcript to S3 (txt): {txt_url}")
     
     print(f"Transcript: {transcript}")
     return results
