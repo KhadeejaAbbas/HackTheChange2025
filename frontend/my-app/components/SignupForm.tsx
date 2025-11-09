@@ -47,8 +47,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     }
 
     try {
-      // Directly call the authentication server endpoints
-      // Authentication server exposes: POST /auth/register/doctor and POST /auth/register/patient
       const endpoint =
         formData.role === "doctor"
           ? `${API_BASE_URL}/auth/register/doctor`
@@ -80,7 +78,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
         throw new Error(data.message || "Failed to create account");
       }
 
-      // Redirect to homepage after successful signup
       window.location.href = "/homepage";
     } catch (err: unknown) {
       setError(
@@ -90,7 +87,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
       );
       console.error("Signup error:", err);
       
-      // Additional debugging information
       if (err instanceof Error && err.message.includes('Failed to fetch')) {
         console.error('Connection error - Make sure the authentication server is running on port 3001');
       }
