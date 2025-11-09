@@ -31,20 +31,21 @@ export default function HomePage() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [patientName, setPatientName] = useState("");
+  const [patientLanguage, setPatientLanguage] = useState("es");
 
   // Get user info from JWT token on mount
   useEffect(() => {
     const initializeUser = () => {
       if (!isAuthenticated()) {
-        router.push('/');
+        router.push("/");
         return;
       }
 
       const userInfo = getUserInfo();
-      
+
       if (!userInfo || !userInfo.userType) {
-        console.error('Unable to determine user type');
-        router.push('/');
+        console.error("Unable to determine user type");
+        router.push("/");
         return;
       }
 
@@ -79,6 +80,7 @@ export default function HomePage() {
 
     // Reset and close modal
     setPatientName("");
+    setPatientLanguage("es");
     setIsModalOpen(false);
   };
 
@@ -120,7 +122,7 @@ export default function HomePage() {
               + Create New Session
             </button>
           )}
-          
+
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
@@ -144,6 +146,7 @@ export default function HomePage() {
                 onClick={() => {
                   setIsModalOpen(false);
                   setPatientName("");
+                  setPatientLanguage("es");
                 }}
                 className="text-gray-500 hover:text-gray-700 text-2xl"
               >
@@ -170,12 +173,35 @@ export default function HomePage() {
                 />
               </div>
 
+              <div className="mb-4">
+                <label
+                  htmlFor="patientLanguage"
+                  className="block text-sm font-medium text-gray-700 mb-2"
+                >
+                  Patient Language
+                </label>
+                <select
+                  id="patientLanguage"
+                  value={patientLanguage}
+                  onChange={(e) => setPatientLanguage(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="es">Spanish</option>
+                  <option value="fr">French</option>
+                  <option value="de">German</option>
+                  <option value="zh">Chinese</option>
+                  <option value="ar">Arabic</option>
+                  <option value="hi">Hindi</option>
+                </select>
+              </div>
+
               <div className="flex gap-3">
                 <button
                   type="button"
                   onClick={() => {
                     setIsModalOpen(false);
                     setPatientName("");
+                    setPatientLanguage("es");
                   }}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition"
                 >
