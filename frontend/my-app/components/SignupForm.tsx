@@ -32,13 +32,16 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError('');
+    setError("");
     setLoading(true);
 
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       setLoading(false);
       return;
     }
@@ -46,13 +49,14 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     try {
       // Directly call the authentication server endpoints
       // Authentication server exposes: POST /auth/register/doctor and POST /auth/register/patient
-      const endpoint = formData.role === 'doctor'
-        ? 'http://localhost:3001/auth/register/doctor'
-        : 'http://localhost:3001/auth/register/patient';
+      const endpoint =
+        formData.role === "doctor"
+          ? `${API_BASE_URL}/auth/register/doctor`
+          : `${API_BASE_URL}/auth/register/patient`;
       const response = await fetch(endpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email: formData.email,
@@ -65,16 +69,20 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
       });
 
       const data = await response.json();
-      
+
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to create account');
+        throw new Error(data.message || "Failed to create account");
       }
-      
+
       // Redirect to homepage after successful signup
-      window.location.href = '/homepage';
+      window.location.href = "/homepage";
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to create an account. Please try again.');
-      console.error('Signup error:', err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to create an account. Please try again."
+      );
+      console.error("Signup error:", err);
     } finally {
       setLoading(false);
     }

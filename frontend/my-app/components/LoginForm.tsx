@@ -8,12 +8,14 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError('');
 
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -28,12 +30,13 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
           setError('Authentication service is unavailable. Please try again later.');
           return;
         }
-        throw new Error(data.message || 'Login failed');
+        throw new Error(data.error || data.message || 'Login failed');
       }
 
       // Store the tokens in localStorage or a secure cookie
       if (data.tokens) {
         localStorage.setItem('accessToken', data.tokens.AccessToken);
+        localStorage.setItem('idToken', data.tokens.IdToken);
         localStorage.setItem('refreshToken', data.tokens.RefreshToken);
       }
 
