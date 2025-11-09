@@ -13,7 +13,7 @@ interface FormData {
 }
 
 interface SignupFormProps {
-  onSwitch?: () => void; // callback to switch to login form
+  onSwitch?: () => void; 
 }
 
 export default function SignupForm({ onSwitch }: SignupFormProps) {
@@ -86,7 +86,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
             </div>
           )}
 
-          {/* Role selection */}
           <div className="flex items-center justify-center gap-6 mb-4">
             <label className="flex items-center text-indigo-700">
               <input
@@ -112,7 +111,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
             </label>
           </div>
 
-          {/* Form fields */}
           <div className="rounded-md shadow-sm -space-y-px">
             <input
               id="name"
@@ -192,7 +190,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
             />
           </div>
 
-          {/* Show password */}
           <div className="flex items-center">
             <input
               id="showPassword"
@@ -206,7 +203,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
             </label>
           </div>
 
-          {/* Submit */}
           <button
             type="submit"
             disabled={loading}
@@ -215,7 +211,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
             {loading ? 'Creating account...' : 'Sign up'}
           </button>
 
-          {/* Switch to login */}
           {onSwitch && (
             <div className="text-center">
               <p className="text-sm text-gray-700 mt-4">

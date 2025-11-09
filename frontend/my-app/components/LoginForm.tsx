@@ -12,7 +12,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
     e.preventDefault();
     setError('');
 
-    // Mock database check
+    // Mock database rn 
     if (email === 'test@example.com' && password === 'password123') {
       router.push('/');
     } else {
