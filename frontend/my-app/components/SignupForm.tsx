@@ -33,7 +33,7 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [showPassword, setShowPassword] = useState(false);
 
   const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -68,13 +68,7 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
         }),
       });
 
-      let data;
-      try {
-        data = await response.json();
-      } catch (err) {
-        console.error('Failed to parse response:', err);
-        throw new Error(`Server error (${response.status}): Failed to parse response`);
-      }
+      const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to create account");
@@ -89,11 +83,6 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
           : "Failed to create an account. Please try again."
       );
       console.error("Signup error:", err);
-      
-      // Additional debugging information
-      if (err instanceof Error && err.message.includes('Failed to fetch')) {
-        console.error('Connection error - Make sure the authentication server is running on port 3001');
-      }
     } finally {
       setLoading(false);
     }

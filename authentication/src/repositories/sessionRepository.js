@@ -1,23 +1,22 @@
 const {
   PutCommand,
   GetCommand,
-  QueryCommand,
+  ScanCommand,
   UpdateCommand,
+  DeleteCommand,
 } = require("@aws-sdk/lib-dynamodb");
 const { v4: uuidv4 } = require("uuid");
 const getDynamoDocumentClient = require("../config/dynamoClient");
 const env = require("../config/env");
 
-/**
- * Create a new session in DynamoDB
- */
+//  Create a new session in DynamoDB
 async function createSession(sessionData) {
   const docClient = getDynamoDocumentClient();
   const sessionId = uuidv4();
   const timestamp = new Date().toISOString();
 
   const item = {
-    sessionId,
+    sessionId: sessionId, // Primary key
     doctorId: sessionData.doctorId,
     patientId: sessionData.patientId || null,
     patientName: sessionData.patientName,
@@ -41,67 +40,55 @@ async function createSession(sessionData) {
   return item;
 }
 
-/**
- * Get sessions by doctor ID using GSI
- */
+//  Get sessions by doctor ID using Scan with filter
 async function getSessionsByDoctorId(doctorId) {
   const docClient = getDynamoDocumentClient();
 
   const result = await docClient.send(
-    new QueryCommand({
+    new ScanCommand({
       TableName: env.dynamo.sessionsTable,
-      IndexName: "DoctorIdIndex",
-      KeyConditionExpression: "doctorId = :doctorId",
+      FilterExpression: "doctorId = :doctorId",
       ExpressionAttributeValues: {
         ":doctorId": doctorId,
       },
-      ScanIndexForward: false, // Sort by createdAt descending (newest first)
     })
   );
 
   return result.Items || [];
 }
 
-/**
- * Get sessions by patient ID using GSI
- */
+//  Get sessions by patient ID using Scan with filter
 async function getSessionsByPatientId(patientId) {
   const docClient = getDynamoDocumentClient();
 
   const result = await docClient.send(
-    new QueryCommand({
+    new ScanCommand({
       TableName: env.dynamo.sessionsTable,
-      IndexName: "PatientIdIndex",
-      KeyConditionExpression: "patientId = :patientId",
+      FilterExpression: "patientId = :patientId",
       ExpressionAttributeValues: {
         ":patientId": patientId,
       },
-      ScanIndexForward: false, // Sort by createdAt descending (newest first)
     })
   );
 
   return result.Items || [];
 }
 
-/**
- * Get a single session by ID
- */
+//  Get a single session by ID
 async function getSessionById(sessionId) {
   const docClient = getDynamoDocumentClient();
 
   const result = await docClient.send(
     new GetCommand({
       TableName: env.dynamo.sessionsTable,
-      Key: { sessionId },
+      Key: { sessionId: sessionId }, // Use 'sessionId' as primary key
     })
   );
 
   return result.Item || null;
 }
 
-/**
- * Update session status
- */
+//  Update session status
 async function updateSessionStatus(sessionId, status) {
   const docClient = getDynamoDocumentClient();
   const timestamp = new Date().toISOString();
@@ -132,7 +119,7 @@ async function updateSessionStatus(sessionId, status) {
   const result = await docClient.send(
     new UpdateCommand({
       TableName: env.dynamo.sessionsTable,
-      Key: { sessionId },
+      Key: { sessionId: sessionId },
       UpdateExpression: `SET ${updateExpression.join(", ")}`,
       ExpressionAttributeNames: expressionAttributeNames,
       ExpressionAttributeValues: expressionAttributeValues,
@@ -143,9 +130,7 @@ async function updateSessionStatus(sessionId, status) {
   return result.Attributes;
 }
 
-/**
- * Add a chat message to a session
- */
+//  Add a chat message to a session
 async function addChatMessage(sessionId, message) {
   const docClient = getDynamoDocumentClient();
   const timestamp = new Date().toISOString();
@@ -153,7 +138,7 @@ async function addChatMessage(sessionId, message) {
   const result = await docClient.send(
     new UpdateCommand({
       TableName: env.dynamo.sessionsTable,
-      Key: { sessionId },
+      Key: { sessionId: sessionId },
       UpdateExpression:
         "SET #chatHistory = list_append(if_not_exists(#chatHistory, :emptyList), :message), #updatedAt = :updatedAt",
       ExpressionAttributeNames: {
@@ -172,6 +157,20 @@ async function addChatMessage(sessionId, message) {
   return result.Attributes;
 }
 
+//  Delete a session
+async function deleteSession(sessionId) {
+  const docClient = getDynamoDocumentClient();
+
+  await docClient.send(
+    new DeleteCommand({
+      TableName: env.dynamo.sessionsTable,
+      Key: { sessionId: sessionId },
+    })
+  );
+
+  return { success: true };
+}
+
 module.exports = {
   createSession,
   getSessionsByDoctorId,
@@ -179,4 +178,5 @@ module.exports = {
   getSessionById,
   updateSessionStatus,
   addChatMessage,
+  deleteSession,
 };
