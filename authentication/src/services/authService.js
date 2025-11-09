@@ -1,16 +1,15 @@
-const crypto = require('crypto');
+const crypto = require("crypto");
 const {
   SignUpCommand,
   AdminAddUserToGroupCommand,
   InitiateAuthCommand,
-  ConfirmSignUpCommand,
-  ResendConfirmationCodeCommand,
-} = require('@aws-sdk/client-cognito-identity-provider');
-const HttpError = require('../utils/httpError');
-const env = require('../config/env');
-const getCognitoClient = require('../config/cognitoClient');
-const doctorRepository = require('../repositories/doctorRepository');
-const patientRepository = require('../repositories/patientRepository');
+  AdminConfirmSignUpCommand,
+} = require("@aws-sdk/client-cognito-identity-provider");
+const HttpError = require("../utils/httpError");
+const env = require("../config/env");
+const getCognitoClient = require("../config/cognitoClient");
+const doctorRepository = require("../repositories/doctorRepository");
+const patientRepository = require("../repositories/patientRepository");
 
 function buildSecretHash(username) {
   if (!env.cognito.clientSecret) {
@@ -18,9 +17,9 @@ function buildSecretHash(username) {
   }
 
   return crypto
-    .createHmac('sha256', env.cognito.clientSecret)
+    .createHmac("sha256", env.cognito.clientSecret)
     .update(`${username}${env.cognito.clientId}`)
-    .digest('base64');
+    .digest("base64");
 }
 
 function mapCognitoError(error) {
@@ -29,17 +28,19 @@ function mapCognitoError(error) {
   }
 
   switch (error.name) {
-    case 'UsernameExistsException':
-      return new HttpError(409, 'An account with this email already exists');
-    case 'InvalidPasswordException':
+    case "UsernameExistsException":
+      return new HttpError(409, "An account with this email already exists");
+    case "InvalidPasswordException":
       return new HttpError(400, error.message);
-    case 'UserNotFoundException':
-    case 'NotAuthorizedException':
-      return new HttpError(401, 'Invalid credentials');
-    case 'UserNotConfirmedException':
-      return new HttpError(403, 'User account is not confirmed yet', { action: 'CONFIRM_SIGN_UP' });
+    case "UserNotFoundException":
+    case "NotAuthorizedException":
+      return new HttpError(401, "Invalid credentials");
+    case "UserNotConfirmedException":
+      return new HttpError(403, "User account is not confirmed yet", {
+        action: "CONFIRM_SIGN_UP",
+      });
     default:
-      return new HttpError(502, error.message || 'Unexpected Cognito error');
+      return new HttpError(502, error.message || "Unexpected Cognito error");
   }
 }
 
@@ -47,19 +48,19 @@ function buildAttributes({ email, name, birthdate, gender }) {
   const attributes = [];
 
   if (email) {
-    attributes.push({ Name: 'email', Value: email.toLowerCase() });
+    attributes.push({ Name: "email", Value: email.toLowerCase() });
   }
 
   if (name) {
-    attributes.push({ Name: 'name', Value: name });
+    attributes.push({ Name: "name", Value: name });
   }
 
   if (birthdate) {
-    attributes.push({ Name: 'birthdate', Value: birthdate });
+    attributes.push({ Name: "birthdate", Value: birthdate });
   }
 
   if (gender) {
-    attributes.push({ Name: 'gender', Value: gender });
+    attributes.push({ Name: "gender", Value: gender });
   }
 
   return attributes;
@@ -74,7 +75,7 @@ async function registerUser({
   groupName,
 }) {
   if (!email || !password || !name) {
-    throw new HttpError(400, 'email, password and name are required');
+    throw new HttpError(400, "email, password and name are required");
   }
 
   env.assertCognitoConfig();
@@ -102,6 +103,14 @@ async function registerUser({
 
     const response = await client.send(signUpCommand);
 
+    // Auto-confirm the user
+    await client.send(
+      new AdminConfirmSignUpCommand({
+        UserPoolId: env.cognito.userPoolId,
+        Username: email,
+      })
+    );
+
     if (groupName) {
       const addToGroupCommand = new AdminAddUserToGroupCommand({
         GroupName: groupName,
@@ -113,7 +122,7 @@ async function registerUser({
 
     return {
       userSub: response.UserSub,
-      status: response.UserConfirmed ? 'CONFIRMED' : 'UNCONFIRMED',
+      status: "CONFIRMED",
     };
   } catch (error) {
     throw mapCognitoError(error);
@@ -121,14 +130,7 @@ async function registerUser({
 }
 
 async function registerDoctor(payload) {
-  const {
-    email,
-    password,
-    name,
-    specialty,
-    birthdate,
-    gender,
-  } = payload;
+  const { email, password, name, specialty, birthdate, gender } = payload;
 
   const registration = await registerUser({
     email,
@@ -188,7 +190,7 @@ async function registerPatient(payload) {
 
 async function login({ email, password }) {
   if (!email || !password) {
-    throw new HttpError(400, 'email and password are required');
+    throw new HttpError(400, "email and password are required");
   }
 
   env.assertCognitoConfig();
@@ -205,11 +207,13 @@ async function login({ email, password }) {
       authParameters.SECRET_HASH = secretHash;
     }
 
-    const response = await client.send(new InitiateAuthCommand({
-      ClientId: env.cognito.clientId,
-      AuthFlow: 'USER_PASSWORD_AUTH',
-      AuthParameters: authParameters,
-    }));
+    const response = await client.send(
+      new InitiateAuthCommand({
+        ClientId: env.cognito.clientId,
+        AuthFlow: "USER_PASSWORD_AUTH",
+        AuthParameters: authParameters,
+      })
+    );
 
     return {
       tokens: response.AuthenticationResult,
@@ -221,65 +225,8 @@ async function login({ email, password }) {
   }
 }
 
-async function confirmSignUp({ email, code }) {
-  if (!email || !code) {
-    throw new HttpError(400, 'email and code are required');
-  }
-
-  env.assertCognitoConfig();
-  const client = getCognitoClient();
-
-  try {
-    const secretHash = buildSecretHash(email);
-    const params = {
-      ClientId: env.cognito.clientId,
-      Username: email,
-      ConfirmationCode: code,
-    };
-
-    if (secretHash) {
-      params.SecretHash = secretHash;
-    }
-
-    await client.send(new ConfirmSignUpCommand(params));
-
-    return { confirmed: true };
-  } catch (error) {
-    throw mapCognitoError(error);
-  }
-}
-
-async function resendConfirmationCode({ email }) {
-  if (!email) {
-    throw new HttpError(400, 'email is required');
-  }
-
-  env.assertCognitoConfig();
-  const client = getCognitoClient();
-
-  try {
-    const secretHash = buildSecretHash(email);
-    const params = {
-      ClientId: env.cognito.clientId,
-      Username: email,
-    };
-
-    if (secretHash) {
-      params.SecretHash = secretHash;
-    }
-
-    await client.send(new ResendConfirmationCodeCommand(params));
-
-    return { status: 'CODE_RESENT' };
-  } catch (error) {
-    throw mapCognitoError(error);
-  }
-}
-
 module.exports = {
   registerDoctor,
   registerPatient,
   login,
-  confirmSignUp,
-  resendConfirmationCode,
 };

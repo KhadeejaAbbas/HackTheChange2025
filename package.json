@@ -1,0 +1,13 @@
+{
+  "name": "hackthechange2025",
+  "version": "1.0.0",
+  "description": "Multilingual healthcare session platform",
+  "scripts": {
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd authentication/src && node server.js",
+    "dev:frontend": "cd frontend/my-app && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
