@@ -10,8 +10,6 @@ const doctorSessions: Session[] = [
     id: 1,
     sessionNumber: 1,
     patientName: "John Smith",
-    summary:
-      "Initial consultation for anxiety management. Discussed coping strategies and established treatment goals.",
   },
 ];
 
@@ -21,8 +19,6 @@ const patientSessions: Session[] = [
     id: 1,
     sessionNumber: 1,
     doctorName: "Dr. Emily Wilson",
-    summary:
-      "Discussed my anxiety symptoms and learned breathing exercises. Dr. Wilson was very understanding.",
   },
 ];
 
@@ -51,7 +47,6 @@ export default function HomePage() {
       id: sessions.length + 1,
       sessionNumber: sessions.length + 1,
       patientName: patientName.trim(),
-      summary: "New session created. No summary yet.",
     };
 
     // Add to sessions list

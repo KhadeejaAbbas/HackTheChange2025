@@ -5,7 +5,6 @@ interface Session {
   sessionNumber: number;
   patientName?: string;
   doctorName?: string;
-  summary: string;
 }
 
 interface SessionCardProps {
