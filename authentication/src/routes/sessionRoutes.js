@@ -10,6 +10,5 @@ router.get("/", sessionController.getUserSessions);
 router.get("/:sessionId", sessionController.getSessionById);
 router.post("/:sessionId/start", sessionController.startSession);
 router.post("/:sessionId/end", sessionController.endSession);
-router.post("/:sessionId/messages", sessionController.addMessage);
 
 module.exports = router;
