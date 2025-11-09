@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import Link from 'next/link';
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { getUserInfo, isAuthenticated } from "@/utils/auth";
 
 // Mock session data TODO: REMOVE
 const sessionData = {
@@ -16,8 +18,30 @@ const sessionData = {
 };
 
 export default function Session1Page() {
-  // Toggle between 'doctor' and 'patient' to see different views
+  const router = useRouter();
   const [userType, setUserType] = useState<"doctor" | "patient">("patient");
+
+  // Get user info from JWT token on mount
+  useEffect(() => {
+    const initializeUser = () => {
+      if (!isAuthenticated()) {
+        router.push("/");
+        return;
+      }
+
+      const userInfo = getUserInfo();
+
+      if (!userInfo || !userInfo.userType) {
+        console.error("Unable to determine user type");
+        router.push("/");
+        return;
+      }
+
+      setUserType(userInfo.userType);
+    };
+
+    initializeUser();
+  }, [router]);
 
   const session =
     userType === "doctor" ? sessionData.doctor : sessionData.patient;
@@ -44,31 +68,6 @@ export default function Session1Page() {
       >
         ← Back to Sessions
       </Link>
-
-      {/* Toggle button for demo purposes */}
-      <div className="mb-6 flex gap-4 items-center">
-        <span className="font-semibold">View as:</span>
-        <button
-          onClick={() => setUserType("patient")}
-          className={`px-4 py-2 rounded ${
-            userType === "patient"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-        >
-          Patient
-        </button>
-        <button
-          onClick={() => setUserType("doctor")}
-          className={`px-4 py-2 rounded ${
-            userType === "doctor"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-700"
-          }`}
-        >
-          Doctor
-        </button>
-      </div>
 
       {/* Session details */}
       <div className="bg-white rounded-lg shadow-md p-8">

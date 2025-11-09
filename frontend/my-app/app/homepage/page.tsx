@@ -1,8 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import SessionsList from "@/components/SessionsList";
 import { Session } from "@/components/SessionCard";
+import { getUserInfo, isAuthenticated, logout } from "@/utils/auth";
 
 // Mock data for doctor sessions TODO: REMOVE
 const doctorSessions: Session[] = [
@@ -23,17 +25,40 @@ const patientSessions: Session[] = [
 ];
 
 export default function HomePage() {
-  // Toggle between 'doctor' and 'patient' to see different views
-  const [userType, setUserType] = useState<"doctor" | "patient">("patient");
-  const [sessions, setSessions] = useState<Session[]>(patientSessions);
+  const router = useRouter();
+  const [userType, setUserType] = useState<"doctor" | "patient" | null>(null);
+  const [userName, setUserName] = useState<string>("");
+  const [sessions, setSessions] = useState<Session[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [patientName, setPatientName] = useState("");
 
-  // Update sessions when user type changes
-  const handleUserTypeChange = (type: "doctor" | "patient") => {
-    setUserType(type);
-    setSessions(type === "doctor" ? doctorSessions : patientSessions);
-  };
+  // Get user info from JWT token on mount
+  useEffect(() => {
+    const initializeUser = () => {
+      if (!isAuthenticated()) {
+        router.push('/');
+        return;
+      }
+
+      const userInfo = getUserInfo();
+      
+      if (!userInfo || !userInfo.userType) {
+        console.error('Unable to determine user type');
+        router.push('/');
+        return;
+      }
+
+      const type = userInfo.userType;
+      const name = userInfo.name || userInfo.email;
+      const sessionList = type === "doctor" ? doctorSessions : patientSessions;
+
+      setUserType(type);
+      setUserName(name);
+      setSessions(sessionList);
+    };
+
+    initializeUser();
+  }, [router]);
 
   const handleCreateSession = (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,42 +82,52 @@ export default function HomePage() {
     setIsModalOpen(false);
   };
 
+  const handleLogout = () => {
+    logout();
+  };
+
+  // Show loading while checking authentication
+  if (!userType) {
+    return (
+      <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6 flex gap-4 items-center justify-between">
-        <div className="flex gap-4 items-center">
-          <span className="font-semibold">View as:</span>
-          <button
-            onClick={() => handleUserTypeChange("patient")}
-            className={`px-4 py-2 rounded ${
-              userType === "patient"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            Patient
-          </button>
-          <button
-            onClick={() => handleUserTypeChange("doctor")}
-            className={`px-4 py-2 rounded ${
-              userType === "doctor"
-                ? "bg-blue-600 text-white"
-                : "bg-gray-200 text-gray-700"
-            }`}
-          >
-            Doctor
-          </button>
+        <div className="flex items-center gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {userType === "doctor" ? "Doctor Dashboard" : "My Sessions"}
+            </h1>
+            <p className="text-gray-600">Welcome, {userName}</p>
+          </div>
         </div>
 
-        {/* Create New Session Button - Only for Doctors */}
-        {userType === "doctor" && (
+        <div className="flex items-center gap-3">
+          {/* Create New Session Button - Only for Doctors */}
+          {userType === "doctor" && (
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            >
+              + Create New Session
+            </button>
+          )}
+          
           <button
-            onClick={() => setIsModalOpen(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition"
+            onClick={handleLogout}
+            className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300 transition"
           >
-            + Create New Session
+            Logout
           </button>
-        )}
+        </div>
       </div>
 
       <SessionsList sessions={sessions} userType={userType} />
