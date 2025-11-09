@@ -12,7 +12,11 @@ interface FormData {
   gender?: string;
 }
 
-export default function SignupForm() {
+interface SignupFormProps {
+  onSwitch?: () => void; // callback to switch to login form
+}
+
+export default function SignupForm({ onSwitch }: SignupFormProps) {
   const [formData, setFormData] = useState<FormData>({
     name: '',
     email: '',
@@ -40,7 +44,6 @@ export default function SignupForm() {
     }
 
     try {
-      // API call placeholder
       const response = await fetch('/api/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -109,7 +112,7 @@ export default function SignupForm() {
             </label>
           </div>
 
-          {/* Common Fields */}
+          {/* Form fields */}
           <div className="rounded-md shadow-sm -space-y-px">
             <input
               id="name"
@@ -134,15 +137,14 @@ export default function SignupForm() {
             <input
               id="age"
               name="age"
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
+              type="number"
+              min={0}
+              placeholder="Age"
               required
-              placeholder="Age in years"
               className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
               value={formData.age}
               onChange={handleChange}
-            />    
+            />
             <input
               id="dob"
               name="dob"
@@ -165,8 +167,6 @@ export default function SignupForm() {
               <option value="male">Male</option>
               <option value="other">Other</option>
             </select>
-
-            {/* Password Fields */}
             <input
               id="password"
               name="password"
@@ -214,6 +214,18 @@ export default function SignupForm() {
           >
             {loading ? 'Creating account...' : 'Sign up'}
           </button>
+
+          {/* Switch to login */}
+          {onSwitch && (
+            <div className="text-center">
+              <p className="text-sm text-gray-700 mt-4">
+                Already have an account?{' '}
+                <button onClick={onSwitch} className="text-indigo-600 hover:underline">
+                  Log in
+                </button>
+              </p>
+            </div>
+          )}
         </form>
       </div>
     </div>
