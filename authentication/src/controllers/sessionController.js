@@ -118,6 +118,35 @@ const endSession = async (req, res, next) => {
   }
 };
 
+const addMessage = async (req, res, next) => {
+  try {
+    const { sessionId } = req.params;
+    const { speaker, originalText, translatedText } = req.body;
+    const userId = req.user.sub;
+    const userType = req.user["cognito:groups"]?.[0]?.toLowerCase();
+
+    if (!speaker || !originalText || !translatedText) {
+      return res.status(400).json({
+        error: "Missing required fields: speaker, originalText, translatedText",
+      });
+    }
+
+    const session = await sessionService.addChatMessage(
+      sessionId,
+      { speaker, originalText, translatedText },
+      userId,
+      userType
+    );
+
+    res.json({
+      message: "Message added",
+      session,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createSession,
   getUserSessions,
