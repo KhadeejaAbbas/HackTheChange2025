@@ -14,7 +14,7 @@ export default function LoginForm({ onSwitch }: { onSwitch: () => void }) {
 
     // Mock database rn 
     if (email === 'test@example.com' && password === 'password123') {
-      router.push('/');
+      router.push("/homepage");
     } else {
       setError('Invalid email or password.');
     }

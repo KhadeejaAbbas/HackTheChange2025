@@ -44,19 +44,15 @@ export default function SignupForm({ onSwitch }: SignupFormProps) {
     }
 
     try {
-      const response = await fetch('/api/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      if (!response.ok) {
-        throw new Error('Signup failed');
-      }
-
-      window.location.href = '/dashboard';
-    } catch (err) {
+      // TODO: Connect to authentication backend at /auth/register/doctor or /auth/register/patient
+      // For now, simulate successful signup
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Redirect to homepage after successful signup
+      window.location.href = '/homepage';
+    } catch (err: unknown) {
       setError('Failed to create an account. Please try again.');
+      console.error('Signup error:', err);
     } finally {
       setLoading(false);
     }
