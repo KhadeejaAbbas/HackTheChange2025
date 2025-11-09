@@ -1,28 +1,30 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import SessionsList from "@/components/SessionsList";
 import { Session } from "@/components/SessionCard";
 import { getUserInfo, isAuthenticated, logout } from "@/utils/auth";
 
-// Mock data for doctor sessions TODO: REMOVE
-const doctorSessions: Session[] = [
-  {
-    id: 1,
-    sessionNumber: 1,
-    patientName: "John Smith",
-  },
-];
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-// Mock data for patient sessions TODO: REMOVE
-const patientSessions: Session[] = [
-  {
-    id: 1,
-    sessionNumber: 1,
-    doctorName: "Dr. Emily Wilson",
-  },
-];
+interface APISession {
+  sessionId: string;
+  doctorId: string;
+  patientId?: string;
+  patientName: string;
+  doctorLanguage: string;
+  patientLanguage: string;
+  startTime: string;
+  endTime?: string;
+  status: string;
+  chatHistory: Array<{
+    speaker: string;
+    timestamp: string;
+    originalText: string;
+    translatedText: string;
+  }>;
+}
 
 export default function HomePage() {
   const router = useRouter();
@@ -32,10 +34,48 @@ export default function HomePage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [patientName, setPatientName] = useState("");
   const [patientLanguage, setPatientLanguage] = useState("es");
+  const [isCreating, setIsCreating] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Fetch sessions from the API
+  const fetchSessions = useCallback(async () => {
+    try {
+      const accessToken = localStorage.getItem("accessToken");
+
+      const response = await fetch(`${API_BASE_URL}/sessions`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Transform API sessions to match our Session interface
+        const transformedSessions = data.sessions.map(
+          (session: APISession, index: number) => ({
+            id: index + 1,
+            sessionNumber: index + 1,
+            patientName: session.patientName,
+            sessionId: session.sessionId,
+            status: session.status,
+          })
+        );
+
+        setSessions(transformedSessions);
+      } else {
+        console.error("Failed to fetch sessions");
+        setSessions([]);
+      }
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      setSessions([]);
+    }
+  }, []);
 
   // Get user info from JWT token on mount
   useEffect(() => {
-    const initializeUser = () => {
+    const initializeUser = async () => {
       if (!isAuthenticated()) {
         router.push("/");
         return;
@@ -51,53 +91,85 @@ export default function HomePage() {
 
       const type = userInfo.userType;
       const name = userInfo.name || userInfo.email;
-      const sessionList = type === "doctor" ? doctorSessions : patientSessions;
 
       setUserType(type);
       setUserName(name);
-      setSessions(sessionList);
+
+      // Fetch real sessions from API
+      await fetchSessions();
+      setIsLoading(false);
     };
 
     initializeUser();
-  }, [router]);
+  }, [router, fetchSessions]);
 
-  const handleCreateSession = (e: React.FormEvent) => {
+  const handleCreateSession = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!patientName.trim()) {
       return;
     }
 
-    // Create new session
-    const newSession: Session = {
-      id: sessions.length + 1,
-      sessionNumber: sessions.length + 1,
-      patientName: patientName.trim(),
-    };
+    setIsCreating(true);
 
-    // Add to sessions list
-    setSessions([...sessions, newSession]);
+    try {
+      const accessToken = localStorage.getItem("accessToken");
 
-    // Reset and close modal
-    setPatientName("");
-    setPatientLanguage("es");
-    setIsModalOpen(false);
+      const response = await fetch(`${API_BASE_URL}/sessions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          patientName: patientName.trim(),
+          patientLanguage,
+          doctorLanguage: "en",
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("Session created:", data.session);
+
+        // Refresh sessions list
+        await fetchSessions();
+
+        // Reset and close modal
+        setPatientName("");
+        setPatientLanguage("es");
+        setIsModalOpen(false);
+      } else {
+        const errorData = await response.json();
+        alert(
+          `Failed to create session: ${errorData.error || "Unknown error"}`
+        );
+      }
+    } catch (error) {
+      console.error("Error creating session:", error);
+      alert("Failed to create session. Please try again.");
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   const handleLogout = () => {
     logout();
   };
 
-  // Show loading while checking authentication
-  if (!userType) {
+  if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading sessions...</p>
         </div>
       </div>
     );
+  }
+
+  if (!userType) {
+    return null;
   }
 
   return (
@@ -169,7 +241,8 @@ export default function HomePage() {
                   onChange={(e) => setPatientName(e.target.value)}
                   placeholder="Enter patient name"
                   required
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isCreating}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 />
               </div>
 
@@ -184,7 +257,8 @@ export default function HomePage() {
                   id="patientLanguage"
                   value={patientLanguage}
                   onChange={(e) => setPatientLanguage(e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  disabled={isCreating}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                 >
                   <option value="es">Spanish</option>
                   <option value="fr">French</option>
@@ -203,15 +277,17 @@ export default function HomePage() {
                     setPatientName("");
                     setPatientLanguage("es");
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition"
+                  disabled={isCreating}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                  disabled={isCreating}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Create Session
+                  {isCreating ? "Creating..." : "Create Session"}
                 </button>
               </div>
             </form>
