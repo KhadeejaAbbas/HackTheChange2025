@@ -1,14 +1,17 @@
 # Backend Workflow
 
 ## Overview
+
 Audio transcription and translation pipeline using AWS services with S3 storage.
 
 ## Core Components
 
 ### 1. Audio Processing (`main.py`)
+
 ```bash
 python main.py audio.mp3 --translate es fr
 ```
+
 - Transcribes audio using AWS Transcribe
 - Auto-detects language with AWS Comprehend
 - Translates to multiple languages via AWS Translate
@@ -17,25 +20,31 @@ python main.py audio.mp3 --translate es fr
 ### 2. Individual Services
 
 **Transcription** (`transcription.py`)
+
 ```bash
 python transcription.py
 ```
+
 - Basic audio-to-text conversion only
 
 **Translation** (`translation.py`)
+
 - Language detection and multi-language translation
 - Supports 75+ languages
 - Used by main.py workflow
 
 **S3 Storage** (`s3_storage.py`)
+
 - Upload/download text, JSON, and files
 - Bucket management
 - Content retrieval
 
 ### 3. AWS Services Test (`test.py`)
+
 ```bash
 python test.py
 ```
+
 - Tests Bedrock (AI text generation)
 - Tests Comprehend Medical
 - Lists and retrieves S3 data
@@ -50,6 +59,7 @@ python test.py
 5. **Storage** → S3 bucket with organized file structure
 
 ## S3 File Structure
+
 ```
 hackthechange-transcripts/
 ├── transcripts/
@@ -61,6 +71,7 @@ hackthechange-transcripts/
 ```
 
 ## Quick Commands
+
 ```bash
 # Full workflow with translation
 python main.py audio.mp3 --translate es fr de
