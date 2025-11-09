@@ -13,29 +13,51 @@ This folder contains Python helpers you can run locally while prototyping the en
 
 ## Scripts
 
-### `speech_to_text.py`
-Uploads a local audio file to S3, kicks off an Amazon Transcribe job, polls until completion, and prints the transcript JSON.
+### 1. `speech_to_text.py`
+Wrapper around `transcription.TranscriptionService`. Provide a local audio file (mp3/wav/m4a). The script uploads temporarily to S3, runs Amazon Transcribe, and prints the transcript.
 
 ```
-python speech_to_text.py samplevoice.mp3 \
-  --language en-US          # or omit to auto-detect
+python speech_to_text.py samplevoice.mp3
 ```
 
-Expected output:
+Output:
 ```json
 {
-  "job_name": "hackthechange-...",
-  "language_code": "en-US",
-  "transcript_uri": "https://s3...",
-  "transcript": "transcribed text ..."
+  "audioFile": "/abs/path/samplevoice.mp3",
+  "transcript": "Recognized speech..."
 }
 ```
 
-### `translate_and_speak.py`
-Translates text to a target language with Amazon Translate and synthesizes the result with Amazon Polly.
+### 2. `translate_text.py`
+Translate any string between languages using Amazon Translate.
 
 ```
-python translate_and_speak.py "bonjour tout le monde" --source fr --target en --output hello.mp3
+python translate_text.py "bonjour" --source fr --target en
 ```
 
-Returns a JSON summary and writes the synthesized audio to `hello.mp3`.
+### 3. `text_to_speech.py`
+Convert text to audio in the specified language. Polly voice is chosen via the built-in `VOICE_MAP`.
+
+```
+python text_to_speech.py "Hello world" --target en --output hello.mp3
+```
+
+If you set `TTS_OUTPUT_BUCKET` (and optional `TTS_OUTPUT_PREFIX`) in `.env`, the Lambda version of this script also drops the MP3 into S3 for later retrieval.
+
+### 4. `translate_and_speak.py`
+Convenience command that chains translation + Polly synthesis in one go.
+
+```
+python translate_and_speak.py "hola" --source es --target en --output hola-en.mp3
+```
+
+### 5. `test_translation_flow.py`
+Uploads a local audio clip, kicks off the Step Functions pipeline, and saves the translated audio output. Requires `STEP_FUNCTION_ARN` (state machine) plus the same bucket/region env vars.
+
+```
+python test_translation_flow.py \
+  --audio samplevoice.mp3 \
+  --target-language fr \
+  --output translated.mp3
+```
+The script also writes the synthesized MP3 to `s3://output-translated-tts/output/<uuid>.mp3` by default. Override `RESULT_AUDIO_BUCKET` / `RESULT_AUDIO_PREFIX` in `.env` if you need a different destination.
