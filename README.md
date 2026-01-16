@@ -2,7 +2,6 @@
 
 A multilingual healthcare communication platform enabling real-time speech translation, transcription, and summaries to improve patient–provider interactions.
 
----
 
 ## Table of Contents
 
