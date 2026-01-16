@@ -90,15 +90,15 @@ These services are accessed via the **AWS SDK (boto3)**. The generated audio out
 
 ## Challenges We Ran Into
 
-### Ideation
+### 1. Ideation
 
 We initially struggled to narrow down our ideas and connect them to the given prompt. Seeking guidance from mentors helped us gain clarity and direction.
 
-### API & Cost Constraints
+### 2. API & Cost Constraints
 
 We originally planned to use **OpenAI’s API** for transcription and translation but discovered it required payment. This led us to explore **AWS Transcribe, Translate, and Polly**, significantly expanding our understanding of AWS services.
 
-### Authentication Issues
+### 3. Authentication Issues
 
 Integrating **AWS Cognito** with frontend login and backend authentication presented major challenges. Valid login attempts consistently resulted in **HTTP 502 and 503 errors**, indicating backend service issues.
 
