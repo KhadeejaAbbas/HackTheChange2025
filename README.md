@@ -16,7 +16,7 @@ A multilingual healthcare communication platform enabling real-time speech trans
 * [What We Learned](#what-we-learned)
 * [Roadmap](#whats-next-for-4m13--git-pushers--inclusivehealth)
 * [Built With](#built-with)
-* [Links](#how-to-access-the-code)
+* [How to Access the Code](#how-to-access-the-code)
 
 ## Inspiration
 
