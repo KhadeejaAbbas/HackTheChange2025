@@ -14,7 +14,6 @@ A multilingual healthcare communication platform enabling real-time speech trans
 * [Accomplishments](#accomplishments-were-proud-of)
 * [What We Learned](#what-we-learned)
 * [Roadmap](#whats-next-for-4m13--git-pushers--inclusivehealth)
-* [Built With](#built-with)
 * [How to Access the Code](#how-to-access-the-code)
 
 ## Inspiration
@@ -126,16 +125,6 @@ Future plans include:
 * Allowing patients to access past records, making InclusiveHealth a centralized health information platform
 * Adding a **portable hardware component** for clinics, especially in regions with language barriers
 
-## Built With
-
-* amazon-dynamodb
-* amazon-web-services
-* aws-transcribe
-* aws-translate
-* cognito
-* next.js
-* polly
-* tailwind
 
 ## How to Access the Code
 
